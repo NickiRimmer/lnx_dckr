@@ -1,0 +1,74 @@
+version: '3.9'
+
+
+networks:
+  app_netwrk:
+    driver: bridge
+
+
+services:
+#1
+#postger db
+  db:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    volumes:
+      - ./outdb:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app_netwrk
+
+#web to data base
+  app:
+    build: ./py_app
+    restart: always
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: usr_1
+      DB_USER: web_usr
+      DB_PASSWORD: 1234
+    depends_on:
+      - db
+    networks:
+      - app_netwrk
+    ports:
+      - '5000:5000'
+
+#web page ffrom web_sub
+  apche:
+    image: httpd:latest
+    container_name: web_proj
+    ports:
+      - '8082:80'
+    volumes:
+      - ./web_sub/nickirimmer.github.io:/usr/local/apache2/htdocs
+    networks:
+      - app_netwrk
+
+#nginx
+  ngnx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    restart: always
+    depends_on:
+      - app
+      - apche
+    volumes:
+      - ./ngnx/nginx.conf:/etc/nginx/nginx.conf
+#      - ./ngnx/defaul.conf:/etc/nginx/d.conf/default.conf
+#      - ./ngnx/defaul.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - '80:80'
+    networks:
+      - app_netwrk
+
+#wtf???
+#volumes:
+#  db_data:
+
+#2self-terminal?
